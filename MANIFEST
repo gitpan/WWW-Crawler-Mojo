@@ -1,0 +1,27 @@
+.travis.yml
+Changes
+example/checkbot.pl
+example/example.pl
+lib/WWW/Crawler/Mojo.pm
+lib/WWW/Crawler/Mojo/Queue.pm
+lib/WWW/Crawler/Mojo/UserAgent.pm
+Makefile.PL
+MANIFEST			This list of files
+readme.pod
+t/collect_urls.t
+t/guess_encoding.t
+t/host_busy.t
+t/main.t
+t/practical.t
+t/public/css/css1.css
+t/public/index.html
+t/public/js/js1.js
+t/public/png/png1.png
+t/public/png/png2.png
+t/public/png/png3.png
+t/queue.t
+t/resolve_href.t
+t/user_agent_userinfo.t
+www-crawler-mojo.komodoproject
+META.yml                                 Module YAML meta-data (added by MakeMaker)
+META.json                                Module JSON meta-data (added by MakeMaker)
