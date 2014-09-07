@@ -8,7 +8,7 @@ use WWW::Crawler::Mojo::UserAgent;
 use Mojo::Message::Request;
 use Mojo::Util qw{md5_sum xml_escape dumper};
 use List::Util;
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 has active_conn => 0;
 has 'crawler_loop_id';
@@ -204,17 +204,27 @@ sub discover {
 sub enqueue {
     my ($self, @queues) = @_;
     
-    for (@queues) {
-        $_ = WWW::Crawler::Mojo::Queue->new(resolved_uri => $_)
-                    unless (ref $_ && ref $_ eq 'WWW::Crawler::Mojo::Queue');
+    for my $queue (@queues) {
+        if (! ref $queue || ref $queue ne 'WWW::Crawler::Mojo::Queue') {
+            my $url = !ref $queue ? Mojo::URL->new($queue) : $queue;
+            $queue = WWW::Crawler::Mojo::Queue->new(resolved_uri => $url);
+        }
         
-        my $md5 = md5_sum($_->resolved_uri->to_string);
+        my $md5 = md5_sum($queue->resolved_uri->to_string);
         
         if (!exists $self->fix->{$md5}) {
             $self->fix->{$md5} = undef;
-            push(@{$self->{queues}}, $_);
+            push(@{$self->{queues}}, $queue);
         }
     }
+}
+
+sub requeue {
+    my ($self, @queues) = @_;
+    for (@queues) {
+        delete $self->fix->{md5_sum($_->resolved_uri->to_string)};
+    }
+    $self->enqueue(@queues);
 }
 
 our %tag_attributes = (
@@ -304,7 +314,7 @@ sub _urls_redirect {
     my $tx = shift;
     my @urls;
     @urls = _urls_redirect($tx->previous) if ($tx->previous);
-    unshift(@urls, $tx->req->url->userinfo(undef)->to_string);
+    unshift(@urls, $tx->req->url->userinfo(undef));
     return @urls;
 }
 
@@ -511,6 +521,9 @@ network errors or un-responsible servers.
     $bot->on(error => sub {
         my ($bot, $error, $queue) = @_;
         say "error: $_[1]";
+        if (...) { # until failur occures 3 times
+            $bot->requeue($queue);
+        }
     });
 
 Note that server errors such as 404 or 500 cannot be catched with the event.
@@ -571,6 +584,17 @@ Parses and discovers links in a web page. Each links are appended to FIFO array.
 Append a queue with a URI or L<WWW::Crawler::Mojo::Queue> object.
 
     $bot->enqueue($queue);
+
+=head2 requeue
+
+Append a queue for re-try.
+
+    $self->on(error => sub {
+        my ($self, $msg, $queue) = @_;
+        if (...) { # until failur occures 3 times
+            $bot->requeue($queue);
+        }
+    });
 
 =head2 collect_urls_html
 
