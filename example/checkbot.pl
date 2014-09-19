@@ -3,28 +3,32 @@ use warnings;
 use utf8;
 use WWW::Crawler::Mojo;
 use 5.10.0;
+use Mojo::URL;
 
 my $bot = WWW::Crawler::Mojo->new;
 my %count;
+
+my $start = Mojo::URL->new(pop @ARGV);
 
 $bot->on(start => sub {
     shift->say_start;
 });
 
 $bot->on(res => sub {
+    $| = 1;
+    
     my ($bot, $discover, $job, $res) = @_;
     
     $count{$res->code}++;
     
-    if ($res->code == 404) {
-        say sprintf('404 occured! : %s referred by %s',
-                                    $job->resolved_uri, $job->referrer);
+    if ($res->code =~ qr{[54]..}) {
+        say sprintf($res->code. ' occured! : %s referred by %s',
+                        $job->resolved_uri, $job->referrer->resolved_uri);
     }
     
     my @disp_seed;
     push(@disp_seed, sprintf('%s:%s', $_, $count{$_})) for (keys %count);
     
-    $| = 1;
     print(join(' / ', @disp_seed), ' ' x 30);
     print("\r");
     
@@ -33,9 +37,12 @@ $bot->on(res => sub {
 
 $bot->on(refer => sub {
     my ($bot, $enqueue, $job, $context) = @_;
-    $enqueue->();
+    if ($job->referrer->resolved_uri->host eq $start->host) {
+        $enqueue->();
+    }
 });
-
-$bot->enqueue('http://example.com/');
+$bot->max_conn_per_host(2);
+$bot->max_conn(5);
+$bot->enqueue($start);
 $bot->peeping_port(3001);
 $bot->crawl;

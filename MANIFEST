@@ -2,7 +2,6 @@ Changes
 example/checkbot.pl
 example/example.pl
 lib/.DS_Store
-lib/WWW/.DS_Store
 lib/WWW/Crawler/Mojo.pm
 lib/WWW/Crawler/Mojo/Job.pm
 lib/WWW/Crawler/Mojo/UserAgent.pm
@@ -19,9 +18,11 @@ t/practical.t
 t/public/css/css1.css
 t/public/index.html
 t/public/js/js1.js
+t/public/png/.DS_Store
 t/public/png/png1.png
 t/public/png/png2.png
 t/public/png/png3.png
+t/public/space.txt
 t/queue.t
 t/resolve_href.t
 t/user_agent_userinfo.t

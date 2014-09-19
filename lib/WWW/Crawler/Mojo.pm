@@ -8,7 +8,7 @@ use WWW::Crawler::Mojo::UserAgent;
 use Mojo::Message::Request;
 use Mojo::Util qw{md5_sum xml_escape dumper};
 use List::Util;
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 has active_conn => 0;
 has 'crawler_loop_id';
@@ -175,6 +175,9 @@ sub discover {
     my $cb = sub {
         my ($url, $dom) = @_;
         
+        $url =~ s{^\s*}{}g;
+        $url =~ s{\s*$}{}g;
+        
         $url = Mojo::URL->new($url);
         
         return unless
@@ -240,11 +243,20 @@ our %tag_attributes = (
     form    => ['action'],
 );
 
+sub _wrong_dom_detection {
+    my $dom = shift;
+    while ($dom = $dom->parent) {
+        return 1 if ($dom->type eq 'script');
+    }
+    return;
+}
+
 sub collect_urls_html {
     my ($dom, $cb) = @_;
     
     $dom->find(join(',', keys %tag_attributes))->each(sub {
         my $dom = shift;
+        return if ($dom->xml && _wrong_dom_detection($dom));
         for (@{$tag_attributes{$dom->type}}) {
             $cb->($dom->{$_}, $dom) if ($dom->{$_});
         }
